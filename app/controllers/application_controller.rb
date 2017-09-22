@@ -1,4 +1,8 @@
 class ApplicationController < ActionController::API
+
+
+
+
   protected
 # Validates the token and user and sets the @current_user scope
   def authenticate_request!
@@ -7,7 +11,7 @@ class ApplicationController < ActionController::API
       'Authorization' => request.headers['Authorization']
       }
     }
-    results = HTTParty.post("http://192.168.99.101:3001/users/get_user", options)
+    results = HTTParty.get("http://192.168.99.103:3001/users/get_user", options)
     if results.code == 200
         @current_user=results.parsed_response
     else
