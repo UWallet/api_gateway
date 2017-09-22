@@ -1,0 +1,7 @@
+version: '2'
+services:
+  api_gateway:
+    build: .
+    command: bash -c "sleep 40 && rm -f tmp/pids/server.pid && bundle exec rails db:migrate && bundle exec rails s -p 4001 -b '0.0.0.0'"
+    ports:
+      - "4000:4000"
