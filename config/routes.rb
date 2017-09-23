@@ -9,7 +9,7 @@ Rails.application.routes.draw do
 	get "/credit_cards", to: "gateway#CardsByUser"
 	get "/foo", to: "gateway#foo"
 	post "/create_transaction", to: "gateway#createTransaction"
-	get "transaction_by_user", to: "gateway#transactionByUser"
+	get "/transaction_by_user", to: "gateway#transactionByUser"
 	post "/lists", to: "gateway#CreateItemOfList"
 	get "/lists/by_user", to: "gateway#showListPendingPays"
 	put "/lists", to: "gateway#updatePendingPay"
