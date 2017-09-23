@@ -3,5 +3,6 @@ Rails.application.routes.draw do
 	post "/users/register", to: "gateway#register"
 	post "/users/login", to: "gateway#login"
 	get "/foo", to: "gateway#foo"
-	post "/createtransaction", to: "gateway#createTransaction"
+	post "/create_transaction", to: "gateway#createTransaction"
+	get "transaction_by_user", to: "gateway#transactionByUser"
 end
