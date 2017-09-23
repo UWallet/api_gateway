@@ -10,4 +10,9 @@ Rails.application.routes.draw do
 	get "/foo", to: "gateway#foo"
 	post "/create_transaction", to: "gateway#createTransaction"
 	get "transaction_by_user", to: "gateway#transactionByUser"
+	post "/lists", to: "gateway#CreateItemOfList"
+	get "/lists/by_user", to: "gateway#showListPendingPays"
+	put "/lists", to: "gateway#updatePendingPay"
+	delete "/lists", to: "gateway#deletePendingPay"
+
 end
