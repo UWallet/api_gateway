@@ -43,6 +43,7 @@ class GatewayController < ApplicationController
       puts @current_user
     end
 
+#function that creates and completes a transaction between users
     def createTransaction
       results1 = checkUser(params[:userid]) #userid user to give the money
       money = checkMoneyUser(@current_user["id"]) # check if the user id that sends the money have the amount
@@ -87,16 +88,19 @@ class GatewayController < ApplicationController
       end
     end
 
+#check if the user exists
     def checkUser(id)
       results = HTTParty.get("http://192.168.99.101:3001/users/search_user?id=" + id.to_s)
       return results
     end
 
+#get money amount of a user
     def checkMoneyUser(id)
       results = HTTParty.get("http://192.168.99.101:3001/users/get_money?id=" + id.to_s)
       return results
     end
 
+#update the money of a user
     def updateMoney(money, id)
       parameters={money: money}
       options = {
@@ -109,6 +113,7 @@ class GatewayController < ApplicationController
       return results
     end
 
+#update a state transaction "initial" "pending" "complete"
     def updateTransaction(state, id)
       parameters={state: state}
       options = {
@@ -121,6 +126,7 @@ class GatewayController < ApplicationController
       return results
     end
 
+#create a transaction state = "initial"
     def postTransaction(useridgiving, useridreceiving, amount)
       parameters={useridgiving: useridgiving.to_i, useridreceiving: useridreceiving.to_i, amount: amount.to_f, state: "initial"}
       options = {
