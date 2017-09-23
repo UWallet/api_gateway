@@ -15,4 +15,8 @@ Rails.application.routes.draw do
 	put "/lists", to: "gateway#updatePendingPay"
 	delete "/lists", to: "gateway#deletePendingPay"
 
+	# Notifications
+	post "/notifications", to: "gateway#createNotification"
+	put "/notifications", to: "gateway#updateNotification"
+
 end

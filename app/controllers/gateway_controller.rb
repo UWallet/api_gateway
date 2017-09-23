@@ -314,4 +314,68 @@ class GatewayController < ApplicationController
       results = HTTParty.post("http://192.168.99.101:3000/transactions", options) # create initial state
       return results
     end
+
+#############################
+#    notifications_ms
+#############################
+#Function to create a notification
+    def createNotification(subject, content)
+      parameters={id_user: (@current_user["id"]).to_i, subject: subject.to_s, content: content.to_s}
+      options = {
+        :body => parameters.to_json,
+        :headers => {
+          'Content-Type' => 'application/json'
+        }
+      }
+      results = HTTParty.post("http://192.168.99.101:3002/notifications", options)
+      return results
+    end
+
+#Function to update a notification
+    def updateNotification(subject, content, read, delivered)
+      read = convertToBoolean(read)
+      delivered = convertToBoolean(delivered)
+
+      parameters={id_user: (@current_user["id"]).to_i, subject: subject.to_s, content: content.to_s, read: read, delivered: delivered   }
+      options = {
+        :body => params.to_json,
+        :headers => {
+        'Content-Type' => 'application/json'
+        }
+      }
+      results = HTTParty.put("http://192.168.99.101:3002/notifications/"+@current_user["id"], options)
+      render json: results.parsed_response, status: results.code
+    end
+
+    def convertToBoolean(v)
+      if v.to_s == 'true'
+        v = true
+      elsif v.to_s == 'false'
+        v = false
+      end
+      return v
+    end
+
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#
