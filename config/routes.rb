@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 	put "/users/update", to: "gateway#updateUser"
 	post "/credit_cards/registercard", to: "gateway#registerCard"
 	put "/credit_cards", to: "gateway#updateCard"
+	put "/credit_cards/TranserMoneyFromCard", to: "gateway#TranserMoneyFromCard"
 	delete "/credit_cards", to: "gateway#deleteCard"
 	get "/credit_cards", to: "gateway#CardsByUser"
 	get "/foo", to: "gateway#foo"
