@@ -218,8 +218,6 @@ class GatewayController < ApplicationController
       transact = results1.parsed_response # transact object to get the id in the rest of the process
       resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:cardId].to_s)
       userA = (resultsGet["user_id"])
-      puts(resultsGet["user_id"])
-      puts( @current_user["id"])
       if userA != (@current_user["id"])
         renderError("Forbidden",403,"current user has no access")
         return -1
@@ -247,6 +245,9 @@ class GatewayController < ApplicationController
           if resultUs.code == 204
             results3 = updateTransaction("complete", transact["id"])# put complete state
             if results3.code == 204
+              subject = "Transferencia de tarjeta de credito"
+              content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s
+              createNotification(@current_user["id"],subject, content)
               head 201 # transaction created and state complete
             else
               render json: results3.parsed_response, status: results3.code
@@ -295,6 +296,9 @@ class GatewayController < ApplicationController
                 if results5.code == 204
                   results6 = updateTransaction("complete", transact["id"])# put complete state
                   if results6.code == 204
+                    subject = "Transacción"
+                    content = "Has recibido una transaccion del usuario " + (params[:userid]).to_s
+                    createNotification(params[:userid],subject, content)
                     head 201 # transaction created and state complete
                   else
                     render json: results6.parsed_response, status: results6.code
