@@ -269,6 +269,12 @@ class GatewayController < ApplicationController
       render json: results.parsed_response, status: results.code
     end
 
+#function that gets the transactions sended, received and the loads to the user account
+    def transactionById
+      results = HTTParty.get("http://192.168.99.101:3000/transactions/" + (params[:id]).to_s)
+      render json: results.parsed_response, status: results.code
+    end
+
 #function that creates and completes a transaction between users
     def createTransaction
       results1 = checkUser(params[:userid]) #userid user to give the money

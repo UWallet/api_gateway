@@ -16,6 +16,8 @@ Rails.application.routes.draw do
 		# Transactions
 	post "/create_transaction", to: "gateway#createTransaction"
 	get "/transaction_by_user", to: "gateway#transactionByUser"
+	get "/transaction_by_id", to: "gateway#transactionById"
+
 
 	# List
 	post "/lists", to: "gateway#createItemOfList"
