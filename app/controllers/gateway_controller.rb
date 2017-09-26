@@ -246,7 +246,7 @@ class GatewayController < ApplicationController
             results3 = updateTransaction("complete", transact["id"])# put complete state
             if results3.code == 204
               subject = "Transferencia de tarjeta de credito"
-              content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s
+              content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s + " por valor de $" + (params[:money]).to_s
               createNotification(@current_user["id"],subject, content)
               head 201 # transaction created and state complete
             else
@@ -297,7 +297,7 @@ class GatewayController < ApplicationController
                   results6 = updateTransaction("complete", transact["id"])# put complete state
                   if results6.code == 204
                     subject = "Transacción"
-                    content = "Has recibido una transaccion del usuario " + (params[:userid]).to_s
+                    content = "Has recibido una transacción del usuario " + (params[:userid]).to_s + " por valor de $" + (params[:amount]).to_s
                     createNotification(params[:userid],subject, content)
                     head 201 # transaction created and state complete
                   else
