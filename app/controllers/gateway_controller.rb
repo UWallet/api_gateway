@@ -1,6 +1,6 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
-  before_action :authenticate_request!, only:[:registerCard, :updateCard, :deleteCard, :CardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard ]
+  before_action :authenticate_request!, only:[:verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :CardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard ]
 
   def renderError(message, code, description)
   render status: code,json: {
@@ -132,7 +132,25 @@ class GatewayController < ApplicationController
         'Authorization' => request.headers['Authorization']
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3001/users/"+params[:id], options)
+      results = HTTParty.put("http://192.168.99.101:3001/users/"+@current_user["id"].to_s, options)
+      render json: results.parsed_response, status: results.code
+    end
+
+    #Function to get user info
+    def getUser
+      render json: @current_user, status: 200
+    end
+
+    #function to verify password
+    def verifyPass
+      options = {
+        :body => params.to_json,
+        :headers => {
+        'Content-Type' => 'application/json',
+        'Authorization' => request.headers['Authorization']
+        }
+      }
+      results = HTTParty.post("http://192.168.99.101:3001/users/verify_pass?id="+ @current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
