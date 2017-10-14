@@ -1,6 +1,6 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
-  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :CardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard ]
+  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard ]
 
   def renderError(message, code, description)
   render status: code,json: {
@@ -227,7 +227,7 @@ class GatewayController < ApplicationController
     end
     #Return the cards asociated to a current user
     def cardsByUser
-        results = HTTParty.get("http://192.168.99.101:3003/credit_cards/user?q="+ @current_user["id"].to_s)
+        results = HTTParty.get("http://192.168.99.101:3003/credit_cards/user?id="+ @current_user["id"].to_s)
         render json: results.parsed_response, status: results.code
     end
     #Used to transfer money from a credit card to it's user acount
