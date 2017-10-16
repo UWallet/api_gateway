@@ -315,7 +315,8 @@ class GatewayController < ApplicationController
                   results6 = updateTransaction("complete", transact["id"])# put complete state
                   if results6.code == 204
                     subject = "Transacción"
-                    content = "Has recibido una transacción del usuario " + (params[:userid]).to_s + " por valor de $" + (params[:amount]).to_s
+                    content = "Has recibido una transacción del usuario " + (@current_user["id"]).to_s + " por valor de $" + (params[:amount]).to_s
+                    puts(content)
                     createNotification(params[:userid],subject, content)
                     head 201 # transaction created and state complete
                   else
