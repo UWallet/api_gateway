@@ -1,6 +1,6 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
-  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard ]
+  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll, :generateDays]
 
   def renderError(message, code, description)
   render status: code,json: {
@@ -394,6 +394,21 @@ class GatewayController < ApplicationController
     end
 
 #############################
+#    extracts_ms
+#############################
+    def generateAll
+      redirect_to ("http://192.168.99.101:3004/generateAll/" + (@current_user["id"]).to_s)
+    end
+
+    def generateDays
+      string = "http://192.168.99.101:3004/generateDays/" + (@current_user["id"]).to_s
+      string2 = string + "/"
+      string3 = string2 + ((params[:id]).to_s)
+      redirect_to (string3)
+    end
+
+
+#############################
 #    notifications_ms
 #############################
 #Function to create a notification
@@ -435,25 +450,3 @@ class GatewayController < ApplicationController
     end
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#

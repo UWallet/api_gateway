@@ -27,6 +27,10 @@ Rails.application.routes.draw do
 	put "/lists", to: "gateway#updatePendingPay"
 	delete "/lists", to: "gateway#deletePendingPay"
 
+	#Extracts
+	get "/all_extracts", to: "gateway#generateAll"
+	get "/day_extracts", to: "gateway#generateDays"
+
 	# Notifications
 	#post "/notifications", to: "gateway#createNotification"
 	put "/notifications", to: "gateway#updateNotification"
