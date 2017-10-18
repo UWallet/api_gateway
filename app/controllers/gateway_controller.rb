@@ -315,8 +315,7 @@ class GatewayController < ApplicationController
                   results6 = updateTransaction("complete", transact["id"])# put complete state
                   if results6.code == 204
                     subject = "Transacción"
-                    content = "Has recibido una transacción del usuario " + (@current_user["id"]).to_s + " por valor de $" + (params[:amount]).to_s
-                    puts(content)
+                    content = "Has recibido una transacción del usuario " + formato(@current_user["id"]) + " por valor de $" + (params[:amount]).to_s
                     createNotification(params[:userid],subject, content)
                     head 201 # transaction created and state complete
                   else
@@ -341,6 +340,16 @@ class GatewayController < ApplicationController
         renderError("Bad Request", 400, "The user do not have enough money")
         return -1
       end
+    end
+
+    def formato(id)
+      cuenta = id.to_s
+      userid=""
+      (8-cuenta.length).times do |n|
+        userid+='0'
+      end
+      userid+=cuenta
+      return userid
     end
 
 #check if the user exists
