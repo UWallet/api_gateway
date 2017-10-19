@@ -95,8 +95,38 @@ class GatewayController < ApplicationController
   #############################
 
 
+
+#function to create group
+  def create_group(user_id,device_token)
+    @key_name_prefix="test4_"
+    options = {
+      :body =>{"operation": "create",
+              "notification_key_name": @key_name_prefix+user_id.to_s,
+              "registration_ids": [device_token]
+              }.to_json,
+      :headers => {'Content-Type'=> 'application/json',
+                    'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
+                    'project_id' => '82818122160'
+                  }
+    }
+    return results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
+  end
+
+#update gruopkey on db
+  def update_key(notification_key, user)
+    options = {
+      :body =>{ "notification_key": notification_key,
+                "user_id": user
+      }.to_json,
+      :headers => {'Content-Type'=> 'application/json'
+                  }
+    }
+    return result_update = HTTParty.put("http://192.168.99.101:3001/group_keys/update_key", options)
+  end
+
 #Function to register user
     def register
+      @key_name_prefix="test4_"
             options = {
               :body => params.to_json,
               :headers => {
@@ -106,37 +136,20 @@ class GatewayController < ApplicationController
             results = HTTParty.post("http://192.168.99.101:3001/users", options)
             if results.code == 201
               user = results.parsed_response
-              aux = params[:user]
+              aux =  params[:user]
               options = {
-                :body =>{"operation": "create",
-                        "notification_key_name": "test1_"+user.to_s,
-                        "registration_ids": [aux[:device_token]]
-                        }.to_json,
-                :headers => {'Content-Type'=> 'application/json',
-                              'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
-                              'project_id' => '82818122160'
-                            }
-              }
-              results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
-            if results2.code == 200
-              puts results2.parsed_response["notification_key"]
-              options = {
-                :body =>{ "notification_key": results2.parsed_response["notification_key"],
+                :body =>{ "notification_key": "",
                           "user_id": user
                 }.to_json,
                 :headers => {'Content-Type'=> 'application/json'
                             }
               }
               results3 = HTTParty.post("http://192.168.99.101:3001/group_keys".to_s,options)
-              puts results3
               if results3.code == 201
                 head 201
               else
                 render json: results3.parsed_response, status: results3.code
               end
-            else
-              render json: results2.parsed_response, status: results2.code
-            end
           else
             render json: results.parsed_response, status: results.code
           end
@@ -144,6 +157,7 @@ class GatewayController < ApplicationController
 
 #function to login users
     def login
+      @key_name_prefix="test4_"
       options = {
         :body => params.to_json,
         :headers => {
@@ -152,11 +166,27 @@ class GatewayController < ApplicationController
       }
       results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
       if results.code == 200
-        aux = results.parsed_response["notification_key"]
+        @aux = results.parsed_response["notification_key"]
+        @aux = @aux["notification_key"]
+        if @aux == ""
+          result = create_group(results.parsed_response["id"].to_s, params[:device_token])
+          if result.code != 200
+            renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result.parsed_response["error"])
+            return -1
+          end
+          @aux = result.parsed_response["notification_key"]
+          result_update = update_key(@aux, results.parsed_response["id"].to_s)
+          if result_update.code != 200
+            render json: result_update.parsed_response, status: result_update.code
+            return -1
+          end
+          render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+          return
+        end
         options = {
           :body =>{"operation": "add",
-                   "notification_key_name": "test1_"+results.parsed_response["id"].to_s,
-                   "notification_key": aux["notification_key"],
+                   "notification_key_name": @key_name_prefix+results.parsed_response["id"].to_s,
+                   "notification_key": @aux,
                    "registration_ids": [params[:device_token]]
                   }.to_json,
           :headers => {'Content-Type'=> 'application/json',
@@ -166,21 +196,42 @@ class GatewayController < ApplicationController
         }
         results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
         if results2.code ==200
-          render json: results.parsed_response, status: results.code
-        else
+          render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+          return
+        elsif results2.code == 400
+          if results2.parsed_response["error"] == "notification_key not found"
+            result2 = create_group(results.parsed_response["id"].to_s, params[:device_token])
+            if result2.code != 200
+              renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result2.parsed_response["error"])
+              return -1
+            end
+            @aux = result2.parsed_response["notification_key"]
+            result_update = update_key(@aux, results.parsed_response["id"].to_s)
+            if result_update.code != 200
+              render json: result_update.parsed_response, status: result_update.code
+              return -1
+            end
+            render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+            return
+          end
           render json: results2.parsed_response, status: results2.code
+          return
+        else
+          renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+results2.parsed_response["error"])
+          return
         end
-      else
-        render json: results.parsed_response, status: results.code
-      end
+    else
+      render json: results.parsed_response, status: results.code
     end
+  end
 
 #function to logOut
 
   def logout
+    @key_name_prefix="test4_"
     options = {
       :body =>{"operation": "remove",
-               "notification_key_name": "test1_"+@current_user["id"].to_s,
+               "notification_key_name": @key_name_prefix+@current_user["id"].to_s,
                "notification_key": @current_user_notification_key,
                "registration_ids": [params[:device_token]]
               }.to_json,
@@ -192,14 +243,8 @@ class GatewayController < ApplicationController
     results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
     if results2.code == 200
       puts "me sali"
+      head 200
     else
-      if results2.code == 400
-        if results2.parsed_response["error"] == "notification_key not found"
-          puts "mk toca recrear el grupo"
-        elsif results2.parsed_response["error"] == "no valid registration ids"
-          puts "papu el device token es nuevo (creo :v) toca añadirlo"
-        end
-      end
       render json: results2.parsed_response, status: results2.code
     end
   end
@@ -346,7 +391,7 @@ class GatewayController < ApplicationController
             if results3.code == 204
               subject = "Transferencia de tarjeta de credito"
               content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s + " por valor de $" + (params[:money]).to_s
-              createNotification(@current_user["id"],subject, content)
+              createNotification(@current_user["id"],subject, content, @current_user_notification_key)
               head 201 # transaction created and state complete
             else
               render json: results3.parsed_response, status: results3.code
@@ -398,7 +443,7 @@ class GatewayController < ApplicationController
                     subject = "Transacción"
                     content = "Has recibido una transacción del usuario " + (@current_user["id"]).to_s + " por valor de $" + (params[:amount]).to_s
                     puts(content)
-                    createNotification(params[:userid],subject, content)
+                    createNotification(params[:userid],subject, content, @current_user_notification_key)
                     head 201 # transaction created and state complete
                   else
                     render json: results6.parsed_response, status: results6.code
@@ -494,8 +539,8 @@ class GatewayController < ApplicationController
 #    notifications_ms
 #############################
 #Function to create a notification
-    def createNotification(user_id,subject, content)
-      parameters={id_user: (user_id).to_i, subject: subject.to_s, content: content.to_s}
+    def createNotification(user_id,subject, content, notification_key)
+      parameters={id_user: (user_id).to_i, subject: subject.to_s, content: content.to_s, notification_key: notification_key.to_s}
       options = {
         :body => parameters.to_json,
         :headers => {
