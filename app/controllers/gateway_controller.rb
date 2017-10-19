@@ -1,6 +1,6 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
-  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll, :generateDays]
+  before_action :authenticate_request!, only:[:logout,:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll, :generateDays]
 
   def renderError(message, code, description)
   render status: code,json: {
@@ -165,7 +165,7 @@ class GatewayController < ApplicationController
                       }
         }
         results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
-        if results2==200
+        if results2.code ==200
           render json: results.parsed_response, status: results.code
         else
           render json: results2.parsed_response, status: results2.code
@@ -178,7 +178,30 @@ class GatewayController < ApplicationController
 #function to logOut
 
   def logout
-
+    options = {
+      :body =>{"operation": "remove",
+               "notification_key_name": "test1_"+@current_user["id"].to_s,
+               "notification_key": @current_user_notification_key,
+               "registration_ids": [params[:device_token]]
+              }.to_json,
+      :headers => {'Content-Type'=> 'application/json',
+                    'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
+                    'project_id' => '82818122160'
+                  }
+    }
+    results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
+    if results2.code == 200
+      puts "me sali"
+    else
+      if results2.code == 400
+        if results2.parsed_response["error"] == "notification_key not found"
+          puts "mk toca recrear el grupo"
+        elsif results2.parsed_response["error"] == "no valid registration ids"
+          puts "papu el device token es nuevo (creo :v) toca añadirlo"
+        end
+      end
+      render json: results2.parsed_response, status: results2.code
+    end
   end
 
 #Function to update user password
