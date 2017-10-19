@@ -17,7 +17,7 @@ class GatewayController < ApplicationController
 
 #Function to create a item of list
   def createItemOfList
-    parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account]}
+    parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:target_account]}
     #puts (parameters)
     options = {
       :body => parameters.to_json,
@@ -25,7 +25,7 @@ class GatewayController < ApplicationController
       'Content-Type' => 'application/json'
       }
     }
-    results = HTTParty.post("http://192.168.99.101:3005/lists", options)
+    results = HTTParty.post("http://192.168.99.103:3005/lists", options)
     if results.code == 201
       head 201
     else
@@ -36,7 +36,7 @@ class GatewayController < ApplicationController
 #Function to show a list of pending pays
   def showListPendingPays
     puts @current_user
-    results = HTTParty.get("http://192.168.99.101:3005/lists/by_user?user_id="+(@current_user["id"]).to_s)
+    results = HTTParty.get("http://192.168.99.103:3005/lists/by_user?user_id="+(@current_user["id"]).to_s)
     if results.code == 200
       render json: results.parsed_response, status: 200
     else
@@ -56,10 +56,10 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
       }
     }
-    resul = HTTParty.get("http://192.168.99.101:3005/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.103:3005/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.put("http://192.168.99.101:3005/lists/"+params[:id], options)
+      results = HTTParty.put("http://192.168.99.103:3005/lists/"+params[:id], options)
       if results.code == 201
         head 201
       else
@@ -76,10 +76,10 @@ class GatewayController < ApplicationController
       return -1
     end
 
-    resul = HTTParty.get("http://192.168.99.101:3005/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.103:3005/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.delete("http://192.168.99.101:3005/lists/"+params[:id])
+      results = HTTParty.delete("http://192.168.99.103:3005/lists/"+params[:id])
       if results.code == 200
         head 200
       else
@@ -103,7 +103,7 @@ class GatewayController < ApplicationController
               'Content-Type' => 'application/json'
               }
             }
-            results = HTTParty.post("http://192.168.99.101:3001/users", options)
+            results = HTTParty.post("http://192.168.99.103:3001/users", options)
             if results.code == 201
               head 201
             else
@@ -119,7 +119,7 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
+      results = HTTParty.post("http://192.168.99.103:3001/users/login", options)
       render json: results.parsed_response, status: results.code
     end
 
@@ -132,7 +132,7 @@ class GatewayController < ApplicationController
         'Authorization' => request.headers['Authorization']
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3001/users/"+@current_user["id"].to_s, options)
+      results = HTTParty.put("http://192.168.99.103:3001/users/"+@current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
@@ -150,7 +150,7 @@ class GatewayController < ApplicationController
         'Authorization' => request.headers['Authorization']
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3001/users/verify_pass?id="+ @current_user["id"].to_s, options)
+      results = HTTParty.post("http://192.168.99.103:3001/users/verify_pass?id="+ @current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
@@ -168,7 +168,7 @@ class GatewayController < ApplicationController
           'Content-Type' => 'application/json'
           }
         }
-        results = HTTParty.post("http://192.168.99.101:3003/credit_cards", options)
+        results = HTTParty.post("http://192.168.99.103:3003/credit_cards", options)
         if results.code == 201
           head 201
         else
@@ -181,7 +181,7 @@ class GatewayController < ApplicationController
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.103:3003/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -195,7 +195,7 @@ class GatewayController < ApplicationController
             'Content-Type' => 'application/json'
             }
           }
-          results = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:id], options)
+          results = HTTParty.put("http://192.168.99.103:3003/credit_cards?id="+params[:id], options)
           if results.code == 201
             head 201
           else
@@ -209,7 +209,7 @@ class GatewayController < ApplicationController
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.103:3003/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -217,7 +217,7 @@ class GatewayController < ApplicationController
           renderError("Forbidden",403,"current user has no access")
           return -1
         else
-          results = HTTParty.delete("http://192.168.99.101:3003/credit_cards?id="+params[:id])
+          results = HTTParty.delete("http://192.168.99.103:3003/credit_cards?id="+params[:id])
           if results.code == 200
             head 200
           else
@@ -227,14 +227,14 @@ class GatewayController < ApplicationController
     end
     #Return the cards asociated to a current user
     def cardsByUser
-        results = HTTParty.get("http://192.168.99.101:3003/credit_cards/user?id="+ @current_user["id"].to_s)
+        results = HTTParty.get("http://192.168.99.103:3003/credit_cards/user?id="+ @current_user["id"].to_s)
         render json: results.parsed_response, status: results.code
     end
     #Used to transfer money from a credit card to it's user acount
     def transferMoneyFromCard
       results1 = postTransaction(@current_user["id"], @current_user["id"], params[:money]) # create initial state
       transact = results1.parsed_response # transact object to get the id in the rest of the process
-      resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:cardId].to_s)
+      resultsGet = HTTParty.get("http://192.168.99.103:3003/credit_card?id="+params[:cardId].to_s)
       userA = (resultsGet["user_id"])
       if userA != (@current_user["id"])
         renderError("Forbidden",403,"current user has no access")
@@ -253,7 +253,7 @@ class GatewayController < ApplicationController
             'Authorization' => request.headers['Authorization']
             }
           }
-          resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
+          resultCd = HTTParty.put("http://192.168.99.103:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
           if resultCd.code == 204
             results2 = updateTransaction("pending", transact["id"])# put pending state
           else
@@ -284,13 +284,13 @@ class GatewayController < ApplicationController
 
 #function that gets the transactions sended, received and the loads to the user account
     def transactionByUser
-      results = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid=" + (@current_user["id"]).to_s)
+      results = HTTParty.get("http://192.168.99.103:3000/by_user_id?userid=" + (@current_user["id"]).to_s)
       render json: results.parsed_response, status: results.code
     end
 
 #function that gets the transactions sended, received and the loads to the user account
     def transactionById
-      results = HTTParty.get("http://192.168.99.101:3000/transactions/" + (params[:id]).to_s)
+      results = HTTParty.get("http://192.168.99.103:3000/transactions/" + (params[:id]).to_s)
       render json: results.parsed_response, status: results.code
     end
 
@@ -354,13 +354,13 @@ class GatewayController < ApplicationController
 
 #check if the user exists
     def checkUser(id)
-      results = HTTParty.get("http://192.168.99.101:3001/users/search_user?id=" + id.to_s)
+      results = HTTParty.get("http://192.168.99.103:3001/users/search_user?id=" + id.to_s)
       return results
     end
 
 #get money amount of a user
     def checkMoneyUser(id)
-      results = HTTParty.get("http://192.168.99.101:3001/users/get_money?id=" + id.to_s)
+      results = HTTParty.get("http://192.168.99.103:3001/users/get_money?id=" + id.to_s)
       return results
     end
 
@@ -373,7 +373,7 @@ class GatewayController < ApplicationController
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3001/users/update_money?id=" + id.to_s , options)
+      results = HTTParty.put("http://192.168.99.103:3001/users/update_money?id=" + id.to_s , options)
       return results
     end
 
@@ -386,7 +386,7 @@ class GatewayController < ApplicationController
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3000/transactions/" + id.to_s , options) # put pending state
+      results = HTTParty.put("http://192.168.99.103:3000/transactions/" + id.to_s , options) # put pending state
       return results
     end
 
@@ -399,7 +399,7 @@ class GatewayController < ApplicationController
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3000/transactions", options) # create initial state
+      results = HTTParty.post("http://192.168.99.103:3000/transactions", options) # create initial state
       return results
     end
 
@@ -407,7 +407,7 @@ class GatewayController < ApplicationController
 #    extracts_ms
 #############################
     def generateAll()
-      weadejm = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid="+ @current_user["id"].to_s)
+      weadejm = HTTParty.get("http://192.168.99.103:3000/by_user_id?userid="+ @current_user["id"].to_s)
       options = {
         :body => weadejm.to_json,
         :headers => {
@@ -415,7 +415,7 @@ class GatewayController < ApplicationController
         }
       }
       print @current_user["email"].to_s
-      results =  HTTParty.post("http://192.168.99.101:3004/json/"+@current_user["email"], options)
+      results =  HTTParty.post("http://192.168.99.103:3004/json/"+@current_user["email"], options)
       return results
     end
 
@@ -431,7 +431,7 @@ class GatewayController < ApplicationController
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3002/notifications", options)
+      results = HTTParty.post("http://192.168.99.103:3002/notifications", options)
       return results
     end
 
@@ -447,7 +447,7 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3002/notifications/"+@current_user["id"], options)
+      results = HTTParty.put("http://192.168.99.103:3002/notifications/"+@current_user["id"], options)
       render json: results.parsed_response, status: results.code
     end
 
