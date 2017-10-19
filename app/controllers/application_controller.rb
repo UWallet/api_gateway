@@ -20,7 +20,10 @@ class ApplicationController < ActionController::API
       }
       results = HTTParty.get("http://192.168.99.101:3001/users/get_user", options)
       if results.code == 200
-          @current_user=results.parsed_response
+          @current_user=results.parsed_response["user"]
+          puts @current_user
+          @current_user_notification_key=results.parsed_response["notification_key"]
+          puts @current_user_notification_key
       else
         render json: results.parsed_response, status: results.code
       end

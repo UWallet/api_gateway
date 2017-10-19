@@ -105,10 +105,41 @@ class GatewayController < ApplicationController
             }
             results = HTTParty.post("http://192.168.99.101:3001/users", options)
             if results.code == 201
-              head 201
+              user = results.parsed_response
+              aux = params[:user]
+              options = {
+                :body =>{"operation": "create",
+                        "notification_key_name": "test1_"+user.to_s,
+                        "registration_ids": [aux[:device_token]]
+                        }.to_json,
+                :headers => {'Content-Type'=> 'application/json',
+                              'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
+                              'project_id' => '82818122160'
+                            }
+              }
+              results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
+            if results2.code == 200
+              puts results2.parsed_response["notification_key"]
+              options = {
+                :body =>{ "notification_key": results2.parsed_response["notification_key"],
+                          "user_id": user
+                }.to_json,
+                :headers => {'Content-Type'=> 'application/json'
+                            }
+              }
+              results3 = HTTParty.post("http://192.168.99.101:3001/group_keys".to_s,options)
+              puts results3
+              if results3.code == 201
+                head 201
+              else
+                render json: results3.parsed_response, status: results3.code
+              end
             else
-              render json: results.parsed_response, status: results.code
+              render json: results2.parsed_response, status: results2.code
             end
+          else
+            render json: results.parsed_response, status: results.code
+          end
     end
 
 #function to login users
@@ -120,8 +151,35 @@ class GatewayController < ApplicationController
         }
       }
       results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
-      render json: results.parsed_response, status: results.code
+      if results.code == 200
+        aux = results.parsed_response["notification_key"]
+        options = {
+          :body =>{"operation": "add",
+                   "notification_key_name": "test1_"+results.parsed_response["id"].to_s,
+                   "notification_key": aux["notification_key"],
+                   "registration_ids": [params[:device_token]]
+                  }.to_json,
+          :headers => {'Content-Type'=> 'application/json',
+                        'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
+                        'project_id' => '82818122160'
+                      }
+        }
+        results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
+        if results2==200
+          render json: results.parsed_response, status: results.code
+        else
+          render json: results2.parsed_response, status: results2.code
+        end
+      else
+        render json: results.parsed_response, status: results.code
+      end
     end
+
+#function to logOut
+
+  def logout
+
+  end
 
 #Function to update user password
     def updateUser
