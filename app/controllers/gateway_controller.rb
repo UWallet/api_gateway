@@ -18,9 +18,8 @@ class GatewayController < ApplicationController
 #Function to create a item of list
   def createItemOfList
     results1 = checkUser(params[:target_account]) #userid user to give the money
-    if results1 == 200
+    if results1.code == 200
       parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:target_account]}
-      #puts (parameters)
       options = {
         :body => parameters.to_json,
         :headers => {
