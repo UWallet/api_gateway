@@ -1,6 +1,6 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
-  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll, :generateDays]
+  before_action :authenticate_request!, only:[:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll]
 
   def renderError(message, code, description)
   render status: code,json: {
@@ -406,17 +406,18 @@ class GatewayController < ApplicationController
 #############################
 #    extracts_ms
 #############################
-    def generateAll
-      redirect_to ("http://192.168.99.101:3004/generateAll/" + (@current_user["id"]).to_s)
+    def generateAll()
+      weadejm = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid="+ @current_user["id"].to_s)
+      options = {
+        :body => weadejm.to_json,
+        :headers => {
+          'Content-Type' => 'application/json'
+        }
+      }
+      print @current_user["email"].to_s
+      results =  HTTParty.post("http://192.168.99.101:3004/json/"+@current_user["email"], options)
+      return results
     end
-
-    def generateDays
-      string = "http://192.168.99.101:3004/generateDays/" + (@current_user["id"]).to_s
-      string2 = string + "/"
-      string3 = string2 + ((params[:id]).to_s)
-      redirect_to (string3)
-    end
-
 
 #############################
 #    notifications_ms
