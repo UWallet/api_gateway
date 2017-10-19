@@ -7,6 +7,7 @@ Rails.application.routes.draw do
 	post "/users/register", to: "gateway#register"
 	post "/users/login", to: "gateway#login"
 	put "/users/update", to: "gateway#updateUser"
+	post "/users/logout", to: "gateway#logout"
 
 	# Credit Cards
 	post "/credit_cards/registercard", to: "gateway#registerCard"
