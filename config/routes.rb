@@ -29,6 +29,7 @@ Rails.application.routes.draw do
 
 	#Extracts
 	post "/all_extracts", to: "gateway#generateAll"
+	post "/day_extracts", to: "gateway#generateDay"
 
 	# Notifications
 	#post "/notifications", to: "gateway#createNotification"
