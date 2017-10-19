@@ -17,19 +17,24 @@ class GatewayController < ApplicationController
 
 #Function to create a item of list
   def createItemOfList
-    parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:target_account]}
-    #puts (parameters)
-    options = {
-      :body => parameters.to_json,
-      :headers => {
-      'Content-Type' => 'application/json'
+    results1 = checkUser(params[:target_account]) #userid user to give the money
+    if results1 == 200
+      parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:target_account]}
+      #puts (parameters)
+      options = {
+        :body => parameters.to_json,
+        :headers => {
+        'Content-Type' => 'application/json'
+        }
       }
-    }
-    results = HTTParty.post("http://192.168.99.101:3005/lists", options)
-    if results.code == 201
-      head 201
-    else
-      render json: results.parsed_response, status: results.code
+      results = HTTParty.post("http://192.168.99.101:3005/lists", options)
+      if results.code == 201
+        head 201
+      else
+        render json: results.parsed_response, status: results.code
+      end
+    elsif results1.code == 404
+      renderError("Not Found", 404, "The resource does not exist")
     end
   end
 
