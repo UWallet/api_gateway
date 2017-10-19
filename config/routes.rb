@@ -28,8 +28,8 @@ Rails.application.routes.draw do
 	delete "/lists", to: "gateway#deletePendingPay"
 
 	#Extracts
-	post "/all_extracts", to: "gateway#generateAll"
-	post "/day_extracts", to: "gateway#generateDay"
+	get "/all_extracts", to: "gateway#generateAll"
+	get "/day_extracts", to: "gateway#generateDay"
 
 	# Notifications
 	#post "/notifications", to: "gateway#createNotification"
