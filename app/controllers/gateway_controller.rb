@@ -246,8 +246,7 @@ class GatewayController < ApplicationController
     }
     results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
     if results2.code == 200
-      puts "me sali"
-      head 200
+      render json:{}.to_json, status: 200
     else
       render json: results2.parsed_response, status: results2.code
     end
@@ -269,6 +268,16 @@ class GatewayController < ApplicationController
     #Function to get user info
     def getUser
       render json: @current_user, status: 200
+    end
+
+    def get_group_key(user)
+      options = {
+        :headers => {
+        'Content-Type' => 'application/json'
+        }
+      }
+      results = HTTParty.get("http://192.168.99.101:3001/group_keys/get_group_key?user_id="+user.to_s, options)
+      return results.parsed_response["notification_key"]
     end
 
     #function to verify password
@@ -447,7 +456,8 @@ class GatewayController < ApplicationController
                     subject = "Transacción"
                     content = "Has recibido una transacción del usuario " + formato(@current_user["id"]) + " por valor de $" + (params[:amount]).to_s
                     puts(content)
-                    createNotification(params[:userid],subject, content, @current_user_notification_key)
+                    notification_key = get_group_key(params[:userid])
+                    createNotification(params[:userid],subject, content, notification_key)
                     head 201 # transaction created and state complete
                   else
                     render json: results6.parsed_response, status: results6.code
