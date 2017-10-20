@@ -19,7 +19,7 @@ class GatewayController < ApplicationController
   def createItemOfList
     results1 = checkUser(params[:target_account]) #userid user to give the money
     if results1.code == 200
-      parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:target_account]}
+      parameters={user_id: (@current_user["id"]).to_i, description: (params[:description]), date_pay: params[:date_pay], cost: params[:cost], target_account: params[:target_account], state_pay:params[:state_pay]}
       options = {
         :body => parameters.to_json,
         :headers => {
@@ -169,65 +169,69 @@ class GatewayController < ApplicationController
         }
       }
       results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
-      if results.code == 200
-        @aux = results.parsed_response["notification_key"]
-        @aux = @aux["notification_key"]
-        if @aux == ""
-          result = create_group(results.parsed_response["id"].to_s, params[:device_token])
-          if result.code != 200
-            renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result.parsed_response["error"])
-            return -1
-          end
-          @aux = result.parsed_response["notification_key"]
-          result_update = update_key(@aux, results.parsed_response["id"].to_s)
-          if result_update.code != 200
-            render json: result_update.parsed_response, status: result_update.code
-            return -1
-          end
-          render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
-          return
-        end
-        options = {
-          :body =>{"operation": "add",
-                   "notification_key_name": @key_name_prefix+results.parsed_response["id"].to_s,
-                   "notification_key": @aux,
-                   "registration_ids": [params[:device_token]]
-                  }.to_json,
-          :headers => {'Content-Type'=> 'application/json',
-                        'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
-                        'project_id' => '82818122160'
-                      }
-        }
-        results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
-        if results2.code ==200
-          render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
-          return
-        elsif results2.code == 400
-          if results2.parsed_response["error"] == "notification_key not found"
-            result2 = create_group(results.parsed_response["id"].to_s, params[:device_token])
-            if result2.code != 200
-              renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result2.parsed_response["error"])
-              return -1
-            end
-            @aux = result2.parsed_response["notification_key"]
-            result_update = update_key(@aux, results.parsed_response["id"].to_s)
-            if result_update.code != 200
-              render json: result_update.parsed_response, status: result_update.code
-              return -1
-            end
-            render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
-            return
-          end
-          render json: results2.parsed_response, status: results2.code
-          return
-        else
-          renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+results2.parsed_response["error"])
-          return
-        end
-    else
-      render json: results.parsed_response, status: results.code
+     if params[:device_token] == nil
+        render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+     return 1
     end
-  end
+          if results.code == 200
+            @aux = results.parsed_response["notification_key"]
+            @aux = @aux["notification_key"]
+            if @aux == ""
+              result = create_group(results.parsed_response["id"].to_s, params[:device_token])
+              if result.code != 200
+                renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result.parsed_response["error"])
+                return -1
+              end
+              @aux = result.parsed_response["notification_key"]
+              result_update = update_key(@aux, results.parsed_response["id"].to_s)
+              if result_update.code != 200
+                render json: result_update.parsed_response, status: result_update.code
+                return -1
+              end
+              render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+              return
+            end
+            options = {
+              :body =>{"operation": "add",
+                       "notification_key_name": @key_name_prefix+results.parsed_response["id"].to_s,
+                       "notification_key": @aux,
+                       "registration_ids": [params[:device_token]]
+                      }.to_json,
+              :headers => {'Content-Type'=> 'application/json',
+                            'Authorization' => 'key = AAAAE0hYQbA:APA91bEdyT2IqQcv0xbWqGrbxaU2ty3KOmV2Fj7-w5-7rU3W03C6pU61WUEwyNSXFhRtq2LO68rljjM4YFYQOpWUNOsSZHulxPQVulQsMgMx5zstPEfvGj900Az_NinDBmXvDEoK7NlW  ',
+                            'project_id' => '82818122160'
+                          }
+            }
+            results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
+            if results2.code ==200
+              render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+              return
+            elsif results2.code == 400
+              if results2.parsed_response["error"] == "notification_key not found"
+                result2 = create_group(results.parsed_response["id"].to_s, params[:device_token])
+                if result2.code != 200
+                  renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+result2.parsed_response["error"])
+                  return -1
+                end
+                @aux = result2.parsed_response["notification_key"]
+                result_update = update_key(@aux, results.parsed_response["id"].to_s)
+                if result_update.code != 200
+                  render json: result_update.parsed_response, status: result_update.code
+                  return -1
+                end
+                render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+                return
+              end
+              render json: results2.parsed_response, status: results2.code
+              return
+            else
+              renderError("Not Acceptable", 400, "No se pudo crear el grupo, razon: "+results2.parsed_response["error"])
+              return
+            end
+        else
+          render json: results.parsed_response, status: results.code
+        end
+end
 
 #function to logOut
 
