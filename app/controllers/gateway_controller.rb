@@ -102,7 +102,7 @@ class GatewayController < ApplicationController
 
 #function to create group
   def create_group(user_id,device_token)
-    @key_name_prefix="test4_"
+    @key_name_prefix="test5_"
     options = {
       :body =>{"operation": "create",
               "notification_key_name": @key_name_prefix+user_id.to_s,
@@ -130,7 +130,7 @@ class GatewayController < ApplicationController
 
 #Function to register user
     def register
-      @key_name_prefix="test4_"
+      @key_name_prefix="test5_"
             options = {
               :body => params.to_json,
               :headers => {
@@ -161,7 +161,7 @@ class GatewayController < ApplicationController
 
 #function to login users
     def login
-      @key_name_prefix="test4_"
+      @key_name_prefix="test5_"
       options = {
         :body => params.to_json,
         :headers => {
@@ -236,7 +236,7 @@ end
 #function to logOut
 
   def logout
-    @key_name_prefix="test4_"
+    @key_name_prefix="test5_"
     options = {
       :body =>{"operation": "remove",
                "notification_key_name": @key_name_prefix+@current_user["id"].to_s,
@@ -595,7 +595,7 @@ end
 #############################
 #Function to create a notification
     def createNotification(user_id,subject, content, notification_key)
-      parameters={id_user: (user_id).to_i, subject: subject.to_s, content: content.to_s, notification_key: notification_key.to_s}
+      parameters={id_user: (user_id).to_i, subject: subject.to_s, content: content.to_s, notification_key: notification_key.to_s, delivered: false, read: false}
       options = {
         :body => parameters.to_json,
         :headers => {
@@ -607,18 +607,19 @@ end
     end
 
 #Function to update a notification
-    def updateNotification(subject, content, read, delivered)
+    def updateNotification
       read = convertToBoolean(read)
       delivered = convertToBoolean(delivered)
 
-      parameters={id_user: (@current_user["id"]).to_i, subject: subject.to_s, content: content.to_s, read: read, delivered: delivered   }
+      parameters={id_user: params[:id_user].to_i, subject: params[:subject].to_s, content: params[:content].to_s, read: params[:read], delivered: params[:delivered]   }
       options = {
-        :body => params.to_json,
+        :body => parameters.to_json,
         :headers => {
         'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3002/notifications/"+@current_user["id"], options)
+      url = "http://192.168.99.101:3002/notifications/"+params[:id].to_s
+      results = HTTParty.put(url.to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
