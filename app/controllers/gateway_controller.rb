@@ -169,11 +169,11 @@ class GatewayController < ApplicationController
         }
       }
       results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
-     if params[:device_token] == nil
-        render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
-     return 1
-    end
           if results.code == 200
+            if params[:device_token] == nil
+               render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
+            return 1
+           end
             @aux = results.parsed_response["notification_key"]
             @aux = @aux["notification_key"]
             if @aux == ""
@@ -237,6 +237,10 @@ end
 
   def logout
     @key_name_prefix="test5_"
+    if params[:device_token] == nil
+       call_logout()
+    return 1
+   end
     options = {
       :body =>{"operation": "remove",
                "notification_key_name": @key_name_prefix+@current_user["id"].to_s,
@@ -250,11 +254,25 @@ end
     }
     results2 = HTTParty.post("https://android.googleapis.com/gcm/notification",options)
     if results2.code == 200
-      render json:{}.to_json, status: 200
+      call_logout()
     else
       render json: results2.parsed_response, status: results2.code
     end
   end
+
+#fuction to private logout
+
+def call_logout
+  options = {
+    :headers => {'Authorization' => request.headers['Authorization'] }
+  }
+  results = HTTParty.get("http://192.168.99.101:3001/users/logout", options)
+  if results.code == 204
+    render json:{}.to_json, status: 200
+  else
+    render json: results.parsed_response, status: results.code
+  end
+end
 
 #Function to update user password
     def updateUser
