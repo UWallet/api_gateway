@@ -10,6 +10,25 @@ class GatewayController < ApplicationController
   }
   end
 
+def divide
+  MyLog.log.debug("Numerator: 10, denominator 2")
+  begin
+    result = 10 / 2
+  rescue Exception => e
+    MyLog.log.error "Error in division!: #{e}"
+    result = nil
+  end
+  toggle=0
+  file = File.open("logapp.log","r")
+  file.each_line do |line|
+      puts line
+      toggle+=1
+  end
+  file.close
+  puts toggle
+  return result
+end
+
   #############################
   #    list_pay_ms
   #############################
@@ -650,4 +669,46 @@ end
       return v
     end
 
+end
+
+require 'logger'
+class MultiDelegator
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def self.delegate(*methods)
+    methods.each do |m|
+      define_method(m) do |*args|
+        @targets.map { |t| t.send(m, *args) }
+      end
+    end
+    self
+  end
+
+  class <<self
+    alias to new
+  end
+end
+
+class MyLog
+  def self.log
+    if @logger.nil?
+      puts File.file?("/home/logapp.log")
+      puts File.file?("logapp.log")
+      if File.file?("logapp.log")
+        log_file = File.open("logapp.log", "a")
+        log_file.each_line do |line|
+            puts line
+        end
+        @logger = Logger.new MultiDelegator.delegate(:write, :close).to(STDOUT, log_file)
+      else
+        @logger = Logger.new 'logapp.log'
+        Logger.new '/home/logapp.log'
+        puts File.file?("/home/logapp.log")
+        puts File.file?("logapp.log")
+      end
+    end
+    @logger
+  end
 end

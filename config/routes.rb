@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 
+	get "/log", to: "gateway#divide"
 	# Authentication
 	get "/users/get_user", to: "gateway#getUser"
 	post "users/verify_pass", to: "gateway#verifyPass"
