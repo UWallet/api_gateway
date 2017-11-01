@@ -415,46 +415,97 @@ end
     def transferMoneyFromCard
       results1 = postTransaction(@current_user["id"], @current_user["id"], params[:money]) # create initial state
       transact = results1.parsed_response # transact object to get the id in the rest of the process
-      resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:cardId].to_s)
-      userA = (resultsGet["user_id"])
-      if userA != (@current_user["id"])
-        renderError("Forbidden",403,"current user has no access")
-        return -1
-      else
-        if (resultsGet["amount"]<(params[:money]).to_i)
-          renderError("Bad Request", 400, "The credit card do not have enough money")
+      if results1.code == 201
+        logTransaction("Transfer", transact["id"], @current_user["id"], @current_user["id"], params[:money], "initial", 0)
+        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:cardId].to_s)
+        userA = (resultsGet["user_id"])
+        if userA != (@current_user["id"])
+          renderError("Forbidden",403,"current user has no access")
+          return -1
         else
-          actualMoney=checkMoneyUser(userA)
-          newMoneyUser=(actualMoney["money"]).to_f + (params[:money]).to_i
-          newMoneyCard=resultsGet["amount"].to_i - (params[:money]).to_i
-          optionsCd = {
-            :body => {"amount": newMoneyCard}.to_json,
-            :headers => {
-            'Content-Type' => 'application/json',
-            'Authorization' => request.headers['Authorization']
+          if (resultsGet["amount"]<(params[:money]).to_i)
+            renderError("Bad Request", 400, "The credit card do not have enough money")
+          else
+            actualMoney=checkMoneyUser(userA)
+            newMoneyUser=(actualMoney["money"]).to_f + (params[:money]).to_i
+            newMoneyCard=resultsGet["amount"].to_i - (params[:money]).to_i
+            optionsCd = {
+              :body => {"amount": newMoneyCard}.to_json,
+              :headers => {
+              'Content-Type' => 'application/json',
+              'Authorization' => request.headers['Authorization']
+              }
             }
-          }
-          resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
-          if resultCd.code == 204
-            results2 = updateTransaction("pending", transact["id"])# put pending state
-          else
-            render json: resultCd.parsed_response, status: resultCd.code
-          end
-          resultUs = updateMoney(newMoneyUser, userA.to_s) #add money to user
-          if resultUs.code == 204
-            results3 = updateTransaction("complete", transact["id"])# put complete state
-            if results3.code == 204
-              subject = "Transferencia de tarjeta de credito"
-              content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s + " por valor de $" + (params[:money]).to_s
-              createNotification(@current_user["id"],subject, content, @current_user_notification_key)
-              head 201 # transaction created and state complete
+            resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
+            if resultCd.code == 204
+              logUpdateCard(params[:cardId], newMoneyCard, 0)
+              results2 = updateTransaction("pending", transact["id"])# put pending state
+              if results2.code == 204
+                logTransaction("Transfer", transact["id"], @current_user["id"], @current_user["id"], params[:money], "pending", 0)
+              else
+                ##########ERROR EN UPDATE TRANSACCION (pending)###### Se devuelve el dinero a la tarjeta, state incomplete
+                undoUpdateCard(params[:cardId], newMoneyCard.to_i , newMoneyCard.to_i + (params[:money]).to_i)
+                resultsError = updateTransaction("incomplete", transact["id"])
+                if resultsError.code == 204
+                  logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+                end
+                render json: results4.parsed_response, status: results4.code
+                ##########ERROR EN UPDATE TRANSACCION (pending)###### Se devuelve el dinero a la tarjeta, state incomplete
+              end
             else
-              render json: results3.parsed_response, status: results3.code
+              ##########ERROR EN UPDATE A TARJETA###### Se devuelve el dinero a la tarjeta, state incomplete
+              undoUpdateCard(params[:cardId], newMoneyCard.to_i , newMoneyCard.to_i + (params[:money]).to_i)
+              resultsError = updateTransaction("incomplete", transact["id"])
+              if resultsError.code == 204
+                logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+              end
+              render json: resultCd.parsed_response, status: resultCd.code
+              ##########ERROR EN UPDATE TRANSACCION (pending)###### Se devuelve el dinero a la tarjeta, state incomplete
             end
-          else
-            render json: resultUs.parsed_response, status: resultUs.code
+            resultUs = updateMoney(newMoneyUser, userA.to_s) #add money to user
+            if resultUs.code == 204
+              logUpdateMoney(userA.to_s, newMoneyUser, 0)
+              results3 = updateTransaction("complete", transact["id"])# put complete state
+              if results3.code == 204
+                logTransaction("Transfer", transact["id"], @current_user["id"], @current_user["id"], params[:money], "complete", 0)
+                subject = "Transferencia de tarjeta de credito"
+                content = "Has recibido una transferencia de la cuenta " + params[:cardId].to_s + " por valor de $" + (params[:money]).to_s
+                createNotification(@current_user["id"],subject, content, @current_user_notification_key)
+                head 201 # transaction created and state complete
+              else
+                ##########ERROR EN UPDATE TRANSACCION (complete)###### Se devuelve el dinero a la tarjeta, y se le resta al usuario state incomplete
+                #le quita al que recibe
+                undoUpdateMoney(params[:userid], newMoneyUser.to_f , newMoneyUser.to_f - (params[:money]).to_i)
+                #le pone dinero de nuevo a la tarjeta
+                undoUpdateCard(params[:cardId], newMoneyCard.to_i , newMoneyCard.to_i + (params[:money]).to_i)
+                resultsError = updateTransaction("incomplete", transact["id"])
+                if resultsError.code == 204
+                  logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+                end
+                render json: results3.parsed_response, status: results3.code
+                ##########ERROR EN UPDATE TRANSACCION (complete)###### Se devuelve el dinero a la tarjeta, y se le resta al usuario state incomplete
+              end
+            else
+              ##########ERROR EN UPDATE MONEY###### Se devuelve el dinero a la tarjeta, y se le resta al usuario state incomplete
+              #le quita al que recibe
+              undoUpdateMoney(params[:userid], newMoneyUser.to_f , newMoneyUser.to_f - (params[:money]).to_i)
+              #le pone dinero de nuevo a la tarjeta
+              undoUpdateCard(params[:cardId], newMoneyCard.to_i , newMoneyCard.to_i + (params[:money]).to_i)
+              resultsError = updateTransaction("incomplete", transact["id"])
+              if resultsError.code == 204
+                logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+              end
+              render json: resultUs.parsed_response, status: resultUs.code
+              ##########ERROR EN UPDATE MONEY######  Se devuelve el dinero a la tarjeta, y se le resta al usuario state incomplete
+            end
           end
         end
+      else
+        resultsError = updateTransaction("incomplete", transact["id"])
+        if resultsError.code == 204
+          logTransaction("Transaction", transact["id"], @current_user["id"], @current_user["id"], params[:money], "incomplete", 1)
+        end
+        render json: results1.parsed_response, status: results1.code
       end
     end
 
@@ -478,42 +529,86 @@ end
 #function that creates and completes a transaction between users
     def createTransaction
       results1 = checkUser(params[:userid]) #userid user to give the money
-      money = checkMoneyUser(@current_user["id"]) # check if the user id that sends the money have the amount
-      moneyusergiving = money.parsed_response
+      money1 = checkMoneyUser(@current_user["id"]) # check if the user id that sends the money have the amount
+      moneyusergiving = money1.parsed_response
       if (moneyusergiving["money"]).to_f > 0 && (moneyusergiving["money"]).to_f >= (params[:amount]).to_f
         if results1.code == 200
           results2 = postTransaction(@current_user["id"], params[:userid], params[:amount]) # create initial state
           transact = results2.parsed_response # transact object to get the id in the rest of the process
           if results2.code == 201
-            results3 = updateMoney((moneyusergiving["money"]).to_f - (params[:amount]).to_f, @current_user["id"]) #subtract money from useridgiving
+            logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], transact["state"], 0)
+            newMoneyGiving = (moneyusergiving["money"]).to_f - (params[:amount]).to_f
+            results3 = updateMoney(newMoneyGiving, @current_user["id"]) #subtract money from useridgiving
             if results3.code == 204
+              logUpdateMoney(@current_user["id"], newMoneyGiving, 0)
               results4 = updateTransaction("pending", transact["id"])# put pending state
               if results4.code == 204
-                money = checkMoneyUser(params[:userid]) # check if the user id that sends the money have the amount
-                moneyuserreceiving= money.parsed_response
-                results5 = updateMoney((moneyuserreceiving["money"]).to_f + (params[:amount]).to_f, params[:userid])#add money from useridreceiving
+                logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "pending", 0)
+                money2 = checkMoneyUser(params[:userid]) # check if the user id that sends the money have the amount
+                moneyuserreceiving= money2.parsed_response
+                newMoneyReceiving = (moneyuserreceiving["money"]).to_f + (params[:amount]).to_f
+                results5 = updateMoney(newMoneyReceiving, params[:userid])#add money from useridreceiving
                 if results5.code == 204
+                  logUpdateMoney(params[:userid], (moneyuserreceiving["money"]).to_f + (params[:amount]).to_f, 0)
                   results6 = updateTransaction("complete", transact["id"])# put complete state
                   if results6.code == 204
+                    logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "complete", 0)
                     subject = "Transacción"
                     content = "Has recibido una transacción del usuario " + formato(@current_user["id"]) + " por valor de $" + (params[:amount]).to_s
-                    puts(content)
                     notification_key = get_group_key(params[:userid])
                     createNotification(params[:userid],subject, content, notification_key)
-                    head 201 # transaction created and state complete
+                    head 201 # transaction created and state #####COMPLETE#######
                   else
+                    ##########ERROR EN UPDATE A TRANSACCION (complete)###### Si ya se le resto el dinero se le devuelve y  al otro usuario si se le sumo se le resta.
+                    #devuelve el dinero al que envia
+                    undoUpdateMoney(@current_user["id"], newMoneyGiving.to_f , newMoneyGiving.to_f + (params[:amount]).to_f)
+                    #le quita al que recibe
+                    undoUpdateMoney(params[:userid], newMoneyReceiving.to_f , newMoneyReceiving.to_f - (params[:amount]).to_f)
+                    resultsError = updateTransaction("incomplete", transact["id"])
+                    if resultsError.code == 204
+                      logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+                    end
                     render json: results6.parsed_response, status: results6.code
+                    ##########ERROR EN UPDATE A TRANSACCION (complete)###### Si ya se le resto el dinero se le devuelve y  al otro usuario si se le sumo se le resta.
                   end
                 else
+                  ##########ERROR EN SUMAR DINERO AL DESTINATARIO###### Si ya se le resto el dinero se le devuelve y  al otro usuario si se le sumo se le resta.
+                  #devuelve el dinero al que envia
+                  undoUpdateMoney(@current_user["id"], newMoneyGiving.to_f , newMoneyGiving.to_f + (params[:amount]).to_f)
+                  #le quita al que recibe
+                  undoUpdateMoney(params[:userid], newMoneyReceiving.to_f , newMoneyReceiving.to_f - (params[:amount]).to_f)
+                  resultsError = updateTransaction("incomplete", transact["id"])
+                  if resultsError.code == 204
+                    logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+                  end
                   render json: results5.parsed_response, status: results5.code
+                  ##########ERROR EN SUMAR DINERO AL DESTINATARIO###### Si ya se le resto el dinero se le devuelve y si se le sumo se le resta.
                 end
               else
+                ##########ERROR EN UPDATE A TRANSACCION (pending)###### Si ya se le resto el dinero se le devuelve y si se le sumo se le resta.
+                undoUpdateMoney(@current_user["id"], newMoneyGiving.to_f , newMoneyGiving.to_f + (params[:amount]).to_f)
+                resultsError = updateTransaction("incomplete", transact["id"])
+                if resultsError.code == 204
+                  logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+                end
                 render json: results4.parsed_response, status: results4.code
+                ##########ERROR EN UPDATE A TRANSACCION (pending)###### Si ya se le resto el dinero se le devuelve y si se le sumo se le resta.
               end
             else
+              ##########ERROR EN RESTAR DINERO AL USUARIO QUE ENVIA###### Si ya se le resto el dinero se le devuelve y se deja la transaccion como incomplete
+              undoUpdateMoney(@current_user["id"], newMoneyGiving.to_f , newMoneyGiving.to_f + (params[:amount]).to_f)
+              resultsError = updateTransaction("incomplete", transact["id"])
+              if resultsError.code == 204
+                logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+              end
               render json: results3.parsed_response, status: results3.code
+              ##########ERROR EN RESTAR DINERO AL USUARIO QUE ENVIA###### Si ya se le resto el dinero se le devuelve y se deja la transaccion como incomplete
             end
           else
+            resultsError = updateTransaction("incomplete", transact["id"])
+            if resultsError.code == 204
+              logTransaction("Transaction", transact["id"], @current_user["id"], params[:userid], params[:amount], "incomplete", 1)
+            end
             render json: results2.parsed_response, status: results2.code
           end
         elsif results1.code == 404
@@ -522,6 +617,36 @@ end
       else
         renderError("Bad Request", 400, "The user do not have enough money")
         return -1
+      end
+    end
+
+    #funcion que maneja las acciones correctoras con el dinero en el USUARIO, duelve el dinero o lo quita a quien corresponda
+    def undoUpdateMoney(userid, expectedMoney,fixedMoney)
+      money1 = checkMoneyUser(userid)
+      moneyuser = money1.parsed_response
+      if expectedMoney == (moneyuser["money"]).to_f
+        resultsUndo = updateMoney(fixedMoney , userid)
+        if resultsUndo.code == 204
+          logUpdateMoney(userid, fixedMoney, 1)
+        end
+      end
+    end
+
+    #funcion que maneja las acciones correctoras con el dinero en las TARJETAS, duelve el dinero o lo quita a quien corresponda
+    def undoUpdateCard(cardid, expectedMoney,fixedMoney)
+      resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+cardid.to_s)
+      if expectedMoney == resultsGet["amount"].to_i
+        optionsCd = {
+          :body => {"amount": fixedMoney}.to_json,
+          :headers => {
+          'Content-Type' => 'application/json',
+          'Authorization' => request.headers['Authorization']
+          }
+        }
+        resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)
+        if resultCd.code == 204
+          logUpdateCard(cardid, fixedMoney, 1)
+        end
       end
     end
 
@@ -670,4 +795,104 @@ end
       return v
     end
 
+    def divide
+      MyLog.log.debug("Numerator 10, denominator 2")
+      begin
+        result = 10 / 2
+      rescue Exception => e
+        MyLog.log.error "Error in division!: #{e}"
+        result = nil
+      end
+      toggle=0
+      file = File.open("logapp.log","r")
+      file.each_line do |line|
+          puts line
+          toggle+=1
+      end
+      file.close
+      puts toggle
+      return result
+    end
+
+    def logTransaction(tipo, transactid, giving, receiving, amount, state, error)
+      if error==1
+        MyLog.log.error "Error! #{tipo} #{transactid} #{giving} #{receiving} #{amount} #{state}"
+      else
+        MyLog.log.debug("Correcto! #{tipo} #{transactid} #{giving} #{receiving} #{amount} #{state}")
+      end
+      file = File.open("logapp.log","r")
+
+      file.each_line do |line|
+          puts line
+      end
+      file.close
+      return true
+    end
+
+    def logUpdateMoney(userid, amount, error)
+      if error==1
+        MyLog.log.error "Error! UpdateMoneyUser #{userid} #{amount}"
+      else
+        MyLog.log.debug("Correcto! UpdateMoneyUser #{userid} #{amount}")
+      end
+      file = File.open("logapp.log","r")
+
+      file.each_line do |line|
+          puts line
+      end
+      file.close
+      return true
+    end
+
+    def logUpdateCard(cardid, amount, error)
+      if error==1
+        MyLog.log.error "Error! UpdateCard #{cardid} #{amount}"
+      else
+        MyLog.log.debug("Correcto! UpdateCard #{cardid} #{amount}")
+      end
+      file = File.open("logapp.log","r")
+
+      file.each_line do |line|
+          puts line
+      end
+      file.close
+      return true
+    end
+
+end
+
+
+
+require 'logger'
+class OpenLog
+  def initialize(*targets)
+    @targets = targets
+  end
+
+  def self.delegate(*methods)
+    methods.each do |m|
+      define_method(m) do |*args|
+        @targets.map { |t| t.send(m, *args) }
+      end
+    end
+    self
+  end
+
+  class <<self
+    alias to new
+  end
+end
+
+class MyLog
+  def self.log
+    if @logger.nil?
+      if File.file?("logapp.log")
+        log_file = File.open("logapp.log", "a")
+        @logger = Logger.new OpenLog.delegate(:write, :close).to(STDOUT, log_file)
+      else
+        @logger = Logger.new 'logapp.log'
+      end
+    end
+    @logger
+  end
 end
