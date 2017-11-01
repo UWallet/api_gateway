@@ -366,12 +366,15 @@ end
 
     #function to verify password
     def verifyPass
+      pass=(encryptor(params[:password]))
+      #puts(pass)
       options = {
-        :body => params.to_json,
+        :body =>{"password": pass
+                }.to_json,
         :headers => {
-        'Content-Type' => 'application/json',
-        'Authorization' => request.headers['Authorization']
-        }
+                'Content-Type' => 'application/json',
+                'Authorization' => request.headers['Authorization']
+                }
       }
       results = HTTParty.post("http://192.168.99.101:3001/users/verify_pass?id="+ @current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
