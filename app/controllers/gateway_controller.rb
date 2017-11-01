@@ -1,7 +1,7 @@
 class GatewayController < ApplicationController
   #Call back to requiere login
   before_action :authenticate_request!, only:[:logout,:updateUser, :verifyPass, :getUser, :registerCard, :updateCard, :deleteCard, :cardsByUser, :transactionByUser, :createTransaction,:createItemOfList,:updatePendingPay,:deletePendingPay, :showListPendingPays, :transferMoneyFromCard, :generateAll, :generateDays]
-
+  PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQDqAMvO0w5Lz3iyJObftSw8jFo/3CoyqaYLcWbA6A4mjCufMie8\nL+dA8kKO1M4JpmslU1h7W1fovOUDNc4ZukhMN/PivfaqROZ95GwQfLWjkKRBngSU\n5ITOBtqAuiBSeJgfZORe4C4NoiVkssfTUUgmYbs7wj1k5Jz0K0e1odGHzQIDAQAB\nAoGBAKETGzerIFQe5D38GNA0rdaf5h+/NWzaSmnmDY0ML3FpWz2iEKgBcXXLTPV0\nlr8dxvNSg72mCsUyAZJMHyqmh8xeWX0fjqPdWJxfb6yriAru2Dzb/VFOdLfAyLiq\n1a9YG24FBeXGHYNI/0YW/YPBRiaW//MLKy37UIc2beBDwo8hAkEA+GNl0qbOJczm\nnTS6UL1nr2LSqJ87gjqmRxgA8HdyPexFhI/4W1sI0C3Vb6lgakerZnOkSR4NiyO+\nGCEdga7BuwJBAPEsjAfkM5S/GkwBYV3tHr2Znvc+r2/3ORr2Pqqpf8VNKUZoZ7jJ\nV1EodWUlpsydYIfXLKI3wkVHn0SmtxPoYBcCQHTfqEifLj7BE/4CkmxtQr1WvZKU\nIhcb66NmGwMK4Rlb9DX03EJ4KkRyXIyG4RQBFxhE75dr6al/rvGBm3WqugMCQCLs\nQnK6FsYJTjOHV6QUPAlUf3Jp/1mFQR2oXrazyK63V6y8XZiifyRfaXB2HUsv1tSU\n0f/Ddzw0/NkiEwys740CQHhEmL228QMBzKN5Rg3CyeLpHIRcxkj2N/XjbzY3UP3R\nf4VOiTXQCuLmGcib9G+v8jOhPbEJ4hWnhCAJHB9/h9c=\n-----END RSA PRIVATE KEY-----"
   def renderError(message, code, description)
   render status: code,json: {
     message: message,
@@ -174,13 +174,31 @@ class GatewayController < ApplicationController
 
 #function to login users
     def login
+
+      pass=(encryptor(params[:password]))
+      #puts(pass)
       @key_name_prefix="test5_"
-      options = {
-        :body => params.to_json,
-        :headers => {
-        'Content-Type' => 'application/json'
+
+      options={}
+      if params[:device_token] == nil
+        options = {
+          :body =>{"email": params[:email],
+                   "password": pass
+                  }.to_json,
+          :headers => {'Content-Type'=> 'application/json'
+                      }
         }
+     else
+      options = {
+        :body =>{"email": params[:email],
+                 "password": pass,
+                 "device_token": params[:device_token]
+                }.to_json,
+        :headers => {'Content-Type'=> 'application/json'
+                    }
       }
+    end
+      #puts(options)
       resultsLDAP = HTTParty.post("http://192.168.99.101:4001/user/resources/ldap", options)
       if resultsLDAP.code == 200
         results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
@@ -794,6 +812,11 @@ end
       end
       return v
     end
+    #Encriptacion
+    def encryptor(data)
+      private_key = OpenSSL::PKey::RSA.new(PRIVATE_KEY)
+      private_key.private_decrypt(Base64.decode64(data))
+    end
 
     def logTransaction(tipo, transactid, giving, receiving, amount, state, error)
       if error==1
@@ -841,6 +864,7 @@ end
     end
 
 end
+
 
 
 
