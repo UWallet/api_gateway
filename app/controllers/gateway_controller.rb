@@ -795,25 +795,6 @@ end
       return v
     end
 
-    def divide
-      MyLog.log.debug("Numerator 10, denominator 2")
-      begin
-        result = 10 / 2
-      rescue Exception => e
-        MyLog.log.error "Error in division!: #{e}"
-        result = nil
-      end
-      toggle=0
-      file = File.open("logapp.log","r")
-      file.each_line do |line|
-          puts line
-          toggle+=1
-      end
-      file.close
-      puts toggle
-      return result
-    end
-
     def logTransaction(tipo, transactid, giving, receiving, amount, state, error)
       if error==1
         MyLog.log.error "Error! #{tipo} #{transactid} #{giving} #{receiving} #{amount} #{state}"
@@ -822,10 +803,10 @@ end
       end
       file = File.open("logapp.log","r")
 
-      file.each_line do |line|
-          puts line
-      end
-      file.close
+      #file.each_line do |line|
+      #    puts line
+      #end
+      #file.close
       return true
     end
 
@@ -837,10 +818,10 @@ end
       end
       file = File.open("logapp.log","r")
 
-      file.each_line do |line|
-          puts line
-      end
-      file.close
+      #file.each_line do |line|
+      #    puts line
+      #end
+      #file.close
       return true
     end
 
@@ -852,10 +833,10 @@ end
       end
       file = File.open("logapp.log","r")
 
-      file.each_line do |line|
-          puts line
-      end
-      file.close
+      #file.each_line do |line|
+      #    puts line
+      #end
+      #file.close
       return true
     end
 
