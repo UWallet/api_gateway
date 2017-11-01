@@ -130,21 +130,45 @@ class GatewayController < ApplicationController
 
 #Function to register user
     def register
+      usr=params[:user]
+      pass=encryptor(usr[:password])
+      confPass=encryptor(usr[:password_confirmation])
+      #puts(pass)
+      #puts(usr[:password])
       @key_name_prefix="test5_"
-            options = {
-              :body => params[:user].to_json,
-              :headers => {
-              'Content-Type' => 'application/json'
-              }
-            }
+      options = {
+        :body =>{
+                "firstName": usr[:firstName],
+                "lastName": usr[:lastName],
+                "email": usr[:email],
+                "password": pass,
+                "password_confirmation": confPass
+              }.to_json,
+        :headers => {'Content-Type'=> 'application/json'
+                    }
+      }
+            #puts(options)
             resultsLDAP = HTTParty.post("http://192.168.99.101:4001/user/resources/ldapcruds", options)
             if resultsLDAP.code == 201
-              options = {
-                :body => params.to_json,
-                :headers => {
-                'Content-Type' => 'application/json'
-                }
+            #  options = {
+            #    :body => params.to_json,
+            #    :headers => {
+            #    'Content-Type' => 'application/json'
+            #    }
+            #  }
+            options = {
+                :body =>{ "user":{
+                        "firstName": usr[:firstName],
+                        "lastName": usr[:lastName],
+                        "email": usr[:email],
+                        "password": pass,
+                        "password_confirmation": confPass
+                        }
+                      }.to_json,
+                :headers => {'Content-Type'=> 'application/json'
+                            }
               }
+              #puts(options)
               results = HTTParty.post("http://192.168.99.101:3001/users", options)
               if results.code == 201
                 user = results.parsed_response
@@ -812,7 +836,7 @@ end
       end
       return v
     end
-    #Encriptacion
+    # Desencriptacion
     def encryptor(data)
       private_key = OpenSSL::PKey::RSA.new(PRIVATE_KEY)
       private_key.private_decrypt(Base64.decode64(data))
