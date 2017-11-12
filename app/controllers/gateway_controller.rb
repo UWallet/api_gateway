@@ -40,7 +40,7 @@ class GatewayController < ApplicationController
 #Function to show a list of pending pays
   def showListPendingPays
     puts @current_user
-    results = HTTParty.get("http://192.168.99.104:4055/lists/by_user?user_id="+(@current_user["id"]).to_s)
+    results = HTTParty.get("http://192.168.99.101:4055/lists/by_user?user_id="+(@current_user["id"]).to_s)
     if results.code == 200
       render json: results.parsed_response, status: 200
     else
@@ -60,10 +60,10 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
       }
     }
-    resul = HTTParty.get("http://192.168.99.104:4055/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.101:4055/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.put("http://192.168.99.104:4055/lists/"+params[:id], options)
+      results = HTTParty.put("http://192.168.99.101:4055/lists/"+params[:id], options)
       if results.code == 201
         head 201
       else
@@ -80,10 +80,10 @@ class GatewayController < ApplicationController
       return -1
     end
 
-    resul = HTTParty.get("http://192.168.99.104:4055/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.101:4055/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.delete("http://192.168.99.104:4055/lists/"+params[:id])
+      results = HTTParty.delete("http://192.168.99.101:4055/lists/"+params[:id])
       if results.code == 200
         head 200
       else
