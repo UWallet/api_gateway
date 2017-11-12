@@ -26,7 +26,7 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3005/lists", options)
+      results = HTTParty.post("http://192.168.99.104:4055/lists", options)
       if results.code == 201
         head 201
       else
@@ -40,7 +40,7 @@ class GatewayController < ApplicationController
 #Function to show a list of pending pays
   def showListPendingPays
     puts @current_user
-    results = HTTParty.get("http://192.168.99.101:3005/lists/by_user?user_id="+(@current_user["id"]).to_s)
+    results = HTTParty.get("http://192.168.99.104:4055/lists/by_user?user_id="+(@current_user["id"]).to_s)
     if results.code == 200
       render json: results.parsed_response, status: 200
     else
@@ -60,10 +60,10 @@ class GatewayController < ApplicationController
         'Content-Type' => 'application/json'
       }
     }
-    resul = HTTParty.get("http://192.168.99.101:3005/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.104:4055/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.put("http://192.168.99.101:3005/lists/"+params[:id], options)
+      results = HTTParty.put("http://192.168.99.104:4055/lists/"+params[:id], options)
       if results.code == 201
         head 201
       else
@@ -80,10 +80,10 @@ class GatewayController < ApplicationController
       return -1
     end
 
-    resul = HTTParty.get("http://192.168.99.101:3005/lists/"+params[:id])
+    resul = HTTParty.get("http://192.168.99.104:4055/lists/"+params[:id])
     user = resul["user_id"]
     if user == (@current_user["id"]).to_i
-      results = HTTParty.delete("http://192.168.99.101:3005/lists/"+params[:id])
+      results = HTTParty.delete("http://192.168.99.104:4055/lists/"+params[:id])
       if results.code == 200
         head 200
       else
@@ -394,7 +394,7 @@ end
           'Content-Type' => 'application/json'
           }
         }
-        results = HTTParty.post("http://192.168.99.101:3003/credit_cards", options)
+        results = HTTParty.post("http://192.168.99.104:4053/credit_cards", options)
         if results.code == 201
           head 201
         else
@@ -407,7 +407,7 @@ end
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.104:4053/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -421,7 +421,7 @@ end
             'Content-Type' => 'application/json'
             }
           }
-          results = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:id], options)
+          results = HTTParty.put("http://192.168.99.104:4053/credit_cards?id="+params[:id], options)
           if results.code == 201
             head 201
           else
@@ -435,7 +435,7 @@ end
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.104:4053/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -443,7 +443,7 @@ end
           renderError("Forbidden",403,"current user has no access")
           return -1
         else
-          results = HTTParty.delete("http://192.168.99.101:3003/credit_cards?id="+params[:id])
+          results = HTTParty.delete("http://192.168.99.104:4053/credit_cards?id="+params[:id])
           if results.code == 200
             head 200
           else
@@ -453,7 +453,7 @@ end
     end
     #Return the cards asociated to a current user
     def cardsByUser
-        results = HTTParty.get("http://192.168.99.101:3003/credit_cards/user?id="+ @current_user["id"].to_s)
+        results = HTTParty.get("http://192.168.99.104:4053/credit_cards/user?id="+ @current_user["id"].to_s)
         render json: results.parsed_response, status: results.code
     end
     #Used to transfer money from a credit card to it's user acount
@@ -462,7 +462,7 @@ end
       transact = results1.parsed_response # transact object to get the id in the rest of the process
       if results1.code == 201
         logTransaction("Transfer", transact["id"], @current_user["id"], @current_user["id"], params[:money], "initial", 0)
-        resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+params[:cardId].to_s)
+        resultsGet = HTTParty.get("http://192.168.99.104:4053/credit_card?id="+params[:cardId].to_s)
         userA = (resultsGet["user_id"])
         if userA != (@current_user["id"])
           renderError("Forbidden",403,"current user has no access")
@@ -481,7 +481,7 @@ end
               'Authorization' => request.headers['Authorization']
               }
             }
-            resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
+            resultCd = HTTParty.put("http://192.168.99.104:4053/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
             if resultCd.code == 204
               logUpdateCard(params[:cardId], newMoneyCard, 0)
               results2 = updateTransaction("pending", transact["id"])# put pending state
@@ -679,7 +679,7 @@ end
 
     #funcion que maneja las acciones correctoras con el dinero en las TARJETAS, duelve el dinero o lo quita a quien corresponda
     def undoUpdateCard(cardid, expectedMoney,fixedMoney)
-      resultsGet = HTTParty.get("http://192.168.99.101:3003/credit_card?id="+cardid.to_s)
+      resultsGet = HTTParty.get("http://192.168.99.104:4053/credit_card?id="+cardid.to_s)
       if expectedMoney == resultsGet["amount"].to_i
         optionsCd = {
           :body => {"amount": fixedMoney}.to_json,
@@ -688,7 +688,7 @@ end
           'Authorization' => request.headers['Authorization']
           }
         }
-        resultCd = HTTParty.put("http://192.168.99.101:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)
+        resultCd = HTTParty.put("http://192.168.99.104:4053/credit_cards?id="+params[:cardId].to_s, optionsCd)
         if resultCd.code == 204
           logUpdateCard(cardid, fixedMoney, 1)
         end
