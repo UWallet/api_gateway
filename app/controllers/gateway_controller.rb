@@ -125,7 +125,7 @@ class GatewayController < ApplicationController
       :headers => {'Content-Type'=> 'application/json'
                   }
     }
-    return result_update = HTTParty.put("http://192.168.99.101:3001/group_keys/update_key", options)
+    return result_update = HTTParty.put("http://192.168.99.101:4051/group_keys/update_key", options)
   end
 
 #Function to register user
@@ -148,7 +148,7 @@ class GatewayController < ApplicationController
                     }
       }
             #puts(options)
-            resultsLDAP = HTTParty.post("http://192.168.99.101:4001/user/resources/ldapcruds", options)
+            resultsLDAP = HTTParty.post("http://192.168.99.104:4001/user/resources/ldapcruds", options)
             if resultsLDAP.code == 201
             #  options = {
             #    :body => params.to_json,
@@ -169,7 +169,7 @@ class GatewayController < ApplicationController
                             }
               }
               #puts(options)
-              results = HTTParty.post("http://192.168.99.101:3001/users", options)
+              results = HTTParty.post("http://192.168.99.101:4051/users", options)
               if results.code == 201
                 user = results.parsed_response
                 aux =  params[:user]
@@ -180,7 +180,7 @@ class GatewayController < ApplicationController
                   :headers => {'Content-Type'=> 'application/json'
                               }
                 }
-                results3 = HTTParty.post("http://192.168.99.101:3001/group_keys".to_s,options)
+                results3 = HTTParty.post("http://192.168.99.101:4051/group_keys".to_s,options)
                 if results3.code == 201
                   head 201
                 else
@@ -223,9 +223,9 @@ class GatewayController < ApplicationController
       }
     end
       #puts(options)
-      resultsLDAP = HTTParty.post("http://192.168.99.101:4001/user/resources/ldap", options)
+      resultsLDAP = HTTParty.post("http://192.168.99.104:4001/user/resources/ldap", options)
       if resultsLDAP.code == 200
-        results = HTTParty.post("http://192.168.99.101:3001/users/login", options)
+        results = HTTParty.post("http://192.168.99.101:4051/users/login", options)
             if results.code == 200
               if params[:device_token] == nil
                  render json: {auth_token: results.parsed_response["auth_token"]}.to_json, status: results.code
@@ -328,7 +328,7 @@ def call_logout
   options = {
     :headers => {'Authorization' => request.headers['Authorization'] }
   }
-  results = HTTParty.get("http://192.168.99.101:3001/users/logout", options)
+  results = HTTParty.get("http://192.168.99.101:4051/users/logout", options)
   if results.code == 204
     render json:{}.to_json, status: 200
   else
@@ -345,7 +345,7 @@ end
         'Authorization' => request.headers['Authorization']
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3001/users/"+@current_user["id"].to_s, options)
+      results = HTTParty.put("http://192.168.99.101:4051/users/"+@current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
@@ -360,7 +360,7 @@ end
         'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.get("http://192.168.99.101:3001/group_keys/get_group_key?user_id="+user.to_s, options)
+      results = HTTParty.get("http://192.168.99.101:4051/group_keys/get_group_key?user_id="+user.to_s, options)
       return results.parsed_response["notification_key"]
     end
 
@@ -376,7 +376,7 @@ end
                 'Authorization' => request.headers['Authorization']
                 }
       }
-      results = HTTParty.post("http://192.168.99.101:3001/users/verify_pass?id="+ @current_user["id"].to_s, options)
+      results = HTTParty.post("http://192.168.99.101:4051/users/verify_pass?id="+ @current_user["id"].to_s, options)
       render json: results.parsed_response, status: results.code
     end
 
@@ -394,7 +394,7 @@ end
           'Content-Type' => 'application/json'
           }
         }
-        results = HTTParty.post("http://192.168.99.101:4053/credit_cards", options)
+        results = HTTParty.post("http://192.168.99.104:3003/credit_cards", options)
         if results.code == 201
           head 201
         else
@@ -407,7 +407,7 @@ end
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:4053/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.104:3003/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -421,7 +421,7 @@ end
             'Content-Type' => 'application/json'
             }
           }
-          results = HTTParty.put("http://192.168.99.101:4053/credit_cards?id="+params[:id], options)
+          results = HTTParty.put("http://192.168.99.104:3003/credit_cards?id="+params[:id], options)
           if results.code == 201
             head 201
           else
@@ -435,7 +435,7 @@ end
           renderError("Not Acceptable (Invalid Params)", 406, "The parameter id is not an integer")
           return -1
         end
-        resultsGet = HTTParty.get("http://192.168.99.101:4053/credit_card?id="+params[:id])
+        resultsGet = HTTParty.get("http://192.168.99.104:3003/credit_card?id="+params[:id])
         userA = (resultsGet["user_id"])
         puts(userA)
         puts( @current_user["id"])
@@ -443,7 +443,7 @@ end
           renderError("Forbidden",403,"current user has no access")
           return -1
         else
-          results = HTTParty.delete("http://192.168.99.101:4053/credit_cards?id="+params[:id])
+          results = HTTParty.delete("http://192.168.99.104:3003/credit_cards?id="+params[:id])
           if results.code == 200
             head 200
           else
@@ -453,7 +453,7 @@ end
     end
     #Return the cards asociated to a current user
     def cardsByUser
-        results = HTTParty.get("http://192.168.99.101:4053/credit_cards/user?id="+ @current_user["id"].to_s)
+        results = HTTParty.get("http://192.168.99.104:3003/credit_cards/user?id="+ @current_user["id"].to_s)
         render json: results.parsed_response, status: results.code
     end
     #Used to transfer money from a credit card to it's user acount
@@ -462,7 +462,7 @@ end
       transact = results1.parsed_response # transact object to get the id in the rest of the process
       if results1.code == 201
         logTransaction("Transfer", transact["id"], @current_user["id"], @current_user["id"], params[:money], "initial", 0)
-        resultsGet = HTTParty.get("http://192.168.99.101:4053/credit_card?id="+params[:cardId].to_s)
+        resultsGet = HTTParty.get("http://192.168.99.104:3003/credit_card?id="+params[:cardId].to_s)
         userA = (resultsGet["user_id"])
         if userA != (@current_user["id"])
           renderError("Forbidden",403,"current user has no access")
@@ -481,7 +481,7 @@ end
               'Authorization' => request.headers['Authorization']
               }
             }
-            resultCd = HTTParty.put("http://192.168.99.101:4053/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
+            resultCd = HTTParty.put("http://192.168.99.104:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)#subtract money from card
             if resultCd.code == 204
               logUpdateCard(params[:cardId], newMoneyCard, 0)
               results2 = updateTransaction("pending", transact["id"])# put pending state
@@ -561,13 +561,13 @@ end
 
 #function that gets the transactions sended, received and the loads to the user account
     def transactionByUser
-      results = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid=" + (@current_user["id"]).to_s)
+      results = HTTParty.get("http://192.168.99.101:4050/by_user_id?userid=" + (@current_user["id"]).to_s)
       render json: results.parsed_response, status: results.code
     end
 
 #function that gets the transactions sended, received and the loads to the user account
     def transactionById
-      results = HTTParty.get("http://192.168.99.101:3000/transactions/" + (params[:id]).to_s)
+      results = HTTParty.get("http://192.168.99.101:4050/transactions/" + (params[:id]).to_s)
       render json: results.parsed_response, status: results.code
     end
 
@@ -679,7 +679,7 @@ end
 
     #funcion que maneja las acciones correctoras con el dinero en las TARJETAS, duelve el dinero o lo quita a quien corresponda
     def undoUpdateCard(cardid, expectedMoney,fixedMoney)
-      resultsGet = HTTParty.get("http://192.168.99.101:4053/credit_card?id="+cardid.to_s)
+      resultsGet = HTTParty.get("http://192.168.99.104:3003/credit_card?id="+cardid.to_s)
       if expectedMoney == resultsGet["amount"].to_i
         optionsCd = {
           :body => {"amount": fixedMoney}.to_json,
@@ -688,7 +688,7 @@ end
           'Authorization' => request.headers['Authorization']
           }
         }
-        resultCd = HTTParty.put("http://192.168.99.101:4053/credit_cards?id="+params[:cardId].to_s, optionsCd)
+        resultCd = HTTParty.put("http://192.168.99.104:3003/credit_cards?id="+params[:cardId].to_s, optionsCd)
         if resultCd.code == 204
           logUpdateCard(cardid, fixedMoney, 1)
         end
@@ -707,13 +707,13 @@ end
 
 #check if the user exists
     def checkUser(id)
-      results = HTTParty.get("http://192.168.99.101:3001/users/search_user?id=" + id.to_s)
+      results = HTTParty.get("http://192.168.99.101:4051/users/search_user?id=" + id.to_s)
       return results
     end
 
 #get money amount of a user
     def checkMoneyUser(id)
-      results = HTTParty.get("http://192.168.99.101:3001/users/get_money?id=" + id.to_s)
+      results = HTTParty.get("http://192.168.99.101:4051/users/get_money?id=" + id.to_s)
       return results
     end
 
@@ -726,7 +726,7 @@ end
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3001/users/update_money?id=" + id.to_s , options)
+      results = HTTParty.put("http://192.168.99.101:4051/users/update_money?id=" + id.to_s , options)
       return results
     end
 
@@ -739,7 +739,7 @@ end
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.put("http://192.168.99.101:3000/transactions/" + id.to_s , options) # put pending state
+      results = HTTParty.put("http://192.168.99.101:4050/transactions/" + id.to_s , options) # put pending state
       return results
     end
 
@@ -752,7 +752,7 @@ end
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3000/transactions", options) # create initial state
+      results = HTTParty.post("http://192.168.99.101:4050/transactions", options) # create initial state
       return results
     end
 
@@ -760,7 +760,7 @@ end
 #    extracts_ms
 #############################
     def generateAll()
-      weadejm = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid="+ @current_user["id"].to_s)
+      weadejm = HTTParty.get("http://192.168.99.101:4050/by_user_id?userid="+ @current_user["id"].to_s)
       options = {
         :body => weadejm.to_json,
         :headers => {
@@ -768,12 +768,12 @@ end
         }
       }
       print @current_user["email"].to_s
-      results =  HTTParty.post("http://192.168.99.101:3004/json/"+@current_user["email"], options)
+      results =  HTTParty.post("http://192.168.99.101:4054/json/"+@current_user["email"], options)
       return results
     end
 
     def generateDay()
-      weadejm = HTTParty.get("http://192.168.99.101:3000/by_user_id?userid="+ @current_user["id"].to_s)
+      weadejm = HTTParty.get("http://192.168.99.101:4050/by_user_id?userid="+ @current_user["id"].to_s)
       options = {
         :body => weadejm.to_json,
         :headers => {
@@ -781,7 +781,7 @@ end
         }
       }
       print @current_user["email"].to_s
-      ruta = "http://192.168.99.101:3004/json2/"+@current_user["email"]
+      ruta = "http://192.168.99.101:4054/json2/"+@current_user["email"]
       ruta = ruta +"/"
       ruta = ruta +params[:d_0]
       ruta = ruta +"/"
@@ -810,7 +810,7 @@ end
           'Content-Type' => 'application/json'
         }
       }
-      results = HTTParty.post("http://192.168.99.101:3002/notifications", options)
+      results = HTTParty.post("http://192.168.99.101:4052/notifications", options)
       return results
     end
 
@@ -826,7 +826,7 @@ end
         'Content-Type' => 'application/json'
         }
       }
-      url = "http://192.168.99.101:3002/notifications/"+params[:id].to_s
+      url = "http://192.168.99.101:4052/notifications/"+params[:id].to_s
       results = HTTParty.put(url.to_s, options)
       render json: results.parsed_response, status: results.code
     end
