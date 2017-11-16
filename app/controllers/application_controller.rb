@@ -22,7 +22,7 @@ class ApplicationController < ActionController::API
       if results.code == 200
           @current_user=results.parsed_response["user"]
           aux=results.parsed_response["notification_key"]
-          @current_user_notification_key=aux["notification_key"]
+          @current_user_notification_key=aux
       else
         render json: results.parsed_response, status: results.code
       end
