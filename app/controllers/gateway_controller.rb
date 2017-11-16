@@ -102,7 +102,7 @@ class GatewayController < ApplicationController
 
 #function to create group
   def create_group(user_id,device_token)
-    @key_name_prefix="test5_"
+    @key_name_prefix="grupo_"
     options = {
       :body =>{"operation": "create",
               "notification_key_name": @key_name_prefix+user_id.to_s,
@@ -135,7 +135,7 @@ class GatewayController < ApplicationController
       confPass=encryptor(usr[:password_confirmation])
       #puts(pass)
       #puts(usr[:password])
-      @key_name_prefix="test5_"
+      @key_name_prefix="grupo_"
       options = {
         :body =>{
                 "firstName": usr[:firstName],
@@ -201,7 +201,7 @@ class GatewayController < ApplicationController
 
       pass=(encryptor(params[:password]))
       #puts(pass)
-      @key_name_prefix="test5_"
+      @key_name_prefix="grupo_"
 
       options={}
       if params[:device_token] == nil
@@ -298,7 +298,7 @@ end
 #function to logOut
 
   def logout
-    @key_name_prefix="test5_"
+    @key_name_prefix="grupo_"
     if params[:device_token] == nil
        call_logout()
     return 1
